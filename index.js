@@ -10,6 +10,7 @@ app.use(express.json());
 
 
 
+
 const uri = `mongodb+srv://${process.env.dbName}:${process.env.dbPass}@cluster0.ws0fker.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 const client = new MongoClient(uri, {
@@ -27,15 +28,26 @@ async function run() {
 
         const db = client.db("doctorsPoint")
         const userCollections = db.collection('users')
-
+        const doctorCollections = db.collection('doctors')
 
 
         //users data save when user create an account by default users status is petient
-
         app.post('/usersDataSave',async(req,res)=>{
             const info = req?.body
             const result = await userCollections.insertOne(info)
-            
+            res.send(result)
+        })
+        
+        //save doctor data when Admin provide doctor information
+        app.post('/doctorAdded',async (req,res)=>{
+            const info = req?.body
+            const result = await doctorCollections.insertOne(info)
+            res.send(result)
+        })
+
+        //get all doctors 
+        app.get('/allDoctorsGet',async (req,res)=>{
+            const result = await doctorCollections.find().toArray()
             res.send(result)
         })
 
