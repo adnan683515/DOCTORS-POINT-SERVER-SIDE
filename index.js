@@ -32,23 +32,57 @@ async function run() {
 
 
         //users data save when user create an account by default users status is petient
-        app.post('/usersDataSave',async(req,res)=>{
+        app.post('/usersDataSave', async (req, res) => {
             const info = req?.body
             const result = await userCollections.insertOne(info)
             res.send(result)
         })
-        
+
         //save doctor data when Admin provide doctor information
-        app.post('/doctorAdded',async (req,res)=>{
+        app.post('/doctorAdded', async (req, res) => {
             const info = req?.body
             const result = await doctorCollections.insertOne(info)
             res.send(result)
         })
 
         //get all doctors 
-        app.get('/allDoctorsGet',async (req,res)=>{
+        app.get('/allDoctorsGet', async (req, res) => {
             const result = await doctorCollections.find().toArray()
             res.send(result)
+        })
+
+
+        app.get('/filterDoctor', async (req, res) => {
+            const fee = req?.query?.fee
+            const chamber = req?.query?.chamber
+            const dept = req?.query?.dept
+            const degree = req?.query?.degree
+            if (fee) {
+                const doctors = await doctorCollections.find({
+                    fee: { $gte: 100, $lte: parseInt(fee) }
+                }).toArray();
+                return res.send(doctors)
+            }
+            else if (chamber) {
+                const query = {
+                    chamber: { $regex: chamber, $options: 'i' }
+                }
+                const result = await doctorCollections.find(query).toArray()
+                return res.send(result)
+            }
+            else if (degree) {
+                const query = {
+                    degree: { $regex: degree, $options: 'i' }
+
+                }
+                const result = await doctorCollections.find(query).toArray()
+                return res.send(result)
+            }
+            else {
+                const query = { department: dept }
+                const result = await doctorCollections.find(query).toArray()
+                return res.send(result)
+            }
         })
 
         await client.db("admin").command({ ping: 1 });
