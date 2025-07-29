@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -52,6 +52,7 @@ async function run() {
         })
 
 
+        //filtering doctor using search , radio option and consultation fee
         app.get('/filterDoctor', async (req, res) => {
             const fee = req?.query?.fee
             const chamber = req?.query?.chamber
@@ -83,6 +84,13 @@ async function run() {
                 const result = await doctorCollections.find(query).toArray()
                 return res.send(result)
             }
+        })
+
+        //doctor details api when user can click on view details
+        app.get('/detalsInfo/:id',async (req,res)=>{
+            const query = {_id : new ObjectId(req?.params?.id)}
+            const result = await doctorCollections.findOne(query)
+            res.send(result)
         })
 
         await client.db("admin").command({ ping: 1 });
