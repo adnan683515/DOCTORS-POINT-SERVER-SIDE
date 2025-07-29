@@ -1,9 +1,11 @@
 const express = require('express');
 const cors = require('cors');
+const Stripe = require('stripe');
 require('dotenv').config();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const PORT = process.env.PORT || 5000;
+const stripe = Stripe(`${process.env.secretKey}`); // e.g. sk_test_...
 
 app.use(cors());
 app.use(express.json());
@@ -29,6 +31,22 @@ async function run() {
         const db = client.db("doctorsPoint")
         const userCollections = db.collection('users')
         const doctorCollections = db.collection('doctors')
+
+
+        //payment systeam using strip 
+        app.post('/create-payment-intent', async (req, res) => {
+            const { amount } = req.body;
+            try {
+                const paymentIntent = await stripe.paymentIntents.create({
+                    amount, 
+                    currency: 'usd',
+                    payment_method_types: ['card'],
+                });
+                res.send({ clientSecret: paymentIntent.client_secret });
+            } catch (err) {
+                res.status(500).json({ error: err.message });
+            }
+        });
 
 
         //users data save when user create an account by default users status is petient
@@ -87,9 +105,17 @@ async function run() {
         })
 
         //doctor details api when user can click on view details
-        app.get('/detalsInfo/:id',async (req,res)=>{
-            const query = {_id : new ObjectId(req?.params?.id)}
+        app.get('/detalsInfo/:id', async (req, res) => {
+            const query = { _id: new ObjectId(req?.params?.id) }
             const result = await doctorCollections.findOne(query)
+            res.send(result)
+        })
+
+        //get single petient 
+        app.get('/petient/:email', async (req, res) => {
+            const query = { email: req?.params?.email }
+            const result = await userCollections.findOne(query)
+
             res.send(result)
         })
 
