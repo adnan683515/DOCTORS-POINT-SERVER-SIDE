@@ -5,11 +5,18 @@ require('dotenv').config();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const PORT = process.env.PORT || 5000;
+//stripe
 const stripe = Stripe(`${process.env.secretKey}`); // e.g. sk_test_...
+
+//ssl commarz
+const SSLCommerzPayment = require('sslcommerz-lts')
+const is_live = false //true for live, false for sandbox
+const store_id = `${process.env.storeId}`
+const store_passwd = `${process.env.storePassOrSecretKey}`
 
 app.use(cors());
 app.use(express.json());
-
+app.use(express.urlencoded({ extended: true })); // ✅ for form-urlencoded data
 
 
 
@@ -31,14 +38,75 @@ async function run() {
         const db = client.db("doctorsPoint")
         const userCollections = db.collection('users')
         const doctorCollections = db.collection('doctors')
+        const appointMentCollactions = db.collection('appointment')
 
+        
+
+
+        //ssl commarze
+        app.get('/init/:id/:user', async (req, res) => {
+            const id = req?.params?.id
+            const user = req?.params?.user
+
+            const query = { _id: new ObjectId(id) }
+            const resultDoctor = await doctorCollections.findOne(query)
+            const userInfo = await userCollections.findOne({ email: user })
+
+            const data = {
+                total_amount: resultDoctor?.fee,
+                currency: 'BDT',
+                tran_id: `TRX-${Date.now()}`,
+                success_url: 'http://localhost:5000/success',
+                fail_url: 'http://localhost:5000/fail',
+                cancel_url: 'http://localhost:5000/cancel',
+                ipn_url: 'http://localhost:5000/ipn',
+                shipping_method: 'Online',
+                product_name: resultDoctor?.name || 'Doctor Appointment',
+                product_category: resultDoctor?.department || 'General',
+                product_profile: 'medical',
+
+                cus_name: userInfo?.name,
+                cus_email: userInfo?.email,
+                cus_add1: 'Patient House, Dhaka',
+                cus_add2: 'N/A',
+                cus_city: 'Dhaka',
+                cus_state: 'Dhaka',
+                cus_postcode: '1000',
+                cus_country: 'Bangladesh',
+                cus_phone: userInfo?.phone || '01700000000',
+                cus_fax: 'N/A',
+
+                ship_name: userInfo?.name,
+                ship_add1: 'Online',
+                ship_add2: 'Online',
+                ship_city: 'Dhaka',
+                ship_state: 'Dhaka',
+                ship_postcode: 1000,
+                ship_country: 'Bangladesh',
+            };
+
+
+            const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live)
+            sslcz.init(data).then(apiResponse => {
+                let GatewayPageURL = apiResponse.GatewayPageURL;
+                res.send({ url: GatewayPageURL });
+            });
+        })
+
+        //payment success url 
+        app.post('/success', async (req, res) => {
+
+            const successInfo = req?.body
+            console.log(successInfo)
+            res.redirect('http://localhost:5173/myAppointments');
+        });
 
         //payment systeam using strip 
         app.post('/create-payment-intent', async (req, res) => {
             const { amount } = req.body;
             try {
                 const paymentIntent = await stripe.paymentIntents.create({
-                    amount, 
+                    amount,
                     currency: 'usd',
                     payment_method_types: ['card'],
                 });
@@ -47,6 +115,22 @@ async function run() {
                 res.status(500).json({ error: err.message });
             }
         });
+
+
+        //appointment save data 
+        app.post('/appointments',async(req,res)=>{
+            const data = req?.body
+            const result = await appointMentCollactions.insertOne(data)
+            res.send(result)
+        })
+
+
+        //when patient take a appoint then doctor details property totalAppointment increase
+
+        app.patch('/updateDoctorProperty',async (req,res)=>{
+            
+        })
+
 
 
         //users data save when user create an account by default users status is petient
