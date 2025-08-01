@@ -39,8 +39,8 @@ async function run() {
         const userCollections = db.collection('users')
         const doctorCollections = db.collection('doctors')
         const appointMentCollactions = db.collection('appointment')
+        const messageCollections = db.collection('messages')
 
-        
 
 
         //ssl commarze
@@ -116,19 +116,55 @@ async function run() {
             }
         });
 
-
         //appointment save data 
-        app.post('/appointments',async(req,res)=>{
+        app.post('/appointments', async (req, res) => {
             const data = req?.body
             const result = await appointMentCollactions.insertOne(data)
             res.send(result)
         })
 
+        //get all users for message section 
+        app.get('/allUsers/:email', async (req, res) => {
+            const email = req?.params?.email
+            const query = { email: { $ne: email } }
+            const result = await userCollections.find(query).toArray()
+            res.send(result)
+        })
+
+        //get single user 
+        app.get('/singleUser/:email', async (req, res) => {
+            const query = { email: req?.params?.email }
+            const result = await userCollections.findOne(query)
+            res.send(result)
+        })
+        //save data when logged in user send data 
+        app.post('/senderDataSave', async (req, res) => {
+            const senderData = req?.body
+            const result = await messageCollections.insertOne(senderData)
+            res.send(result)
+        })
+        //get all message from message collections specipic 2 user
+        app.get('/allmsg/:sender/:reciver', async (req, res) => {
+
+            const senderEmail = req?.params?.sender
+            const reciver = req?.params?.reciver
+
+            const query = {
+                $or: [
+                    { 'sender': senderEmail, 'reciver': reciver },
+                    { 'sender': reciver, 'reciver': senderEmail }
+                ]
+            };
+
+            const result = await messageCollections.find(query).toArray()
+
+            res.send(result)
+        })
 
         //when patient take a appoint then doctor details property totalAppointment increase
 
-        app.patch('/updateDoctorProperty',async (req,res)=>{
-            
+        app.patch('/updateDoctorProperty', async (req, res) => {
+
         })
 
 
