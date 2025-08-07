@@ -135,6 +135,7 @@ async function run() {
         app.get('/singleUser/:email', async (req, res) => {
             const query = { email: req?.params?.email }
             const result = await userCollections.findOne(query)
+            
             res.send(result)
         })
         //save data when logged in user send data 
@@ -161,8 +162,17 @@ async function run() {
             res.send(result)
         })
 
-        //when patient take a appoint then doctor details property totalAppointment increase
+        //search user by  name
+        app.get('/searchUser/:name', async (req, res) => {
+            const name = req?.params?.name
+            const query = {
+                name: { $regex: `^${name}`, $options: 'i' } //namer fist letter mile gele hoise
+            }
+            const result = await userCollections.find(query).toArray()
+            res.send(result)
+        })
 
+        //when patient take a appoint then doctor details property totalAppointment increase
         app.patch('/updateDoctorProperty', async (req, res) => {
 
         })
@@ -236,6 +246,35 @@ async function run() {
             const query = { email: req?.params?.email }
             const result = await userCollections.findOne(query)
 
+            res.send(result)
+        })
+
+
+        //get todays doctor  appointments
+        app.get('/todaysAppointment/:days/:docId', async (req, res) => {
+            const docId = req?.params?.docId
+            const dayname = req?.params?.days
+
+            const query = {
+                doctorId: docId,
+                day: dayname,
+                status: 'pending'
+            }
+            const result = await appointMentCollactions.find(query).toArray()
+            res.send(result)
+
+        })
+
+
+
+        //get my appointments by email 
+        app.get('/myappointments/:email',async (req,res)=>{
+
+            const email = req?.params?.email
+            const query = {
+                email
+            }
+            const result = await appointMentCollactions.find(query).toArray()
             res.send(result)
         })
 
