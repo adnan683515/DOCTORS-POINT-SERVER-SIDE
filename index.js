@@ -135,7 +135,7 @@ async function run() {
         app.get('/singleUser/:email', async (req, res) => {
             const query = { email: req?.params?.email }
             const result = await userCollections.findOne(query)
-            
+
             res.send(result)
         })
         //save data when logged in user send data 
@@ -176,6 +176,18 @@ async function run() {
         app.patch('/updateDoctorProperty', async (req, res) => {
 
         })
+
+
+        //single doctor 
+        app.get('/singleDoctor/:id', async (req, res) => {
+            const id = req?.params?.id
+            const query = { _id: new ObjectId(id) }
+            const result = await doctorCollections.findOne(query)
+            res.send(result)
+        })
+
+
+
 
 
 
@@ -268,13 +280,18 @@ async function run() {
 
 
         //get my appointments by email 
-        app.get('/myappointments/:email',async (req,res)=>{
+        app.get('/myappointments/:email', async (req, res) => {
 
             const email = req?.params?.email
             const query = {
                 email
             }
             const result = await appointMentCollactions.find(query).toArray()
+
+            const pending = await (await appointMentCollactions.find({ email, status: 'pending' }).toArray()).length
+            const ongoing = await (await appointMentCollactions.find({ email, status: 'Ongoing' }).toArray()).length
+            
+            console.log("pending", pending, "ongoing", ongoing)
             res.send(result)
         })
 
