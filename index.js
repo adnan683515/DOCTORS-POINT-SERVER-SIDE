@@ -211,6 +211,13 @@ async function run() {
             res.send(result)
         })
 
+        //some doctors for admin deashboar showing 
+        app.get('/adminForDoctorRecent',async (req,res)=>{
+
+            const result = await doctorCollections.find().limit(6).toArray()
+            res.send(result)
+        })
+
 
         //filtering doctor using search , radio option and consultation fee
         app.get('/filterDoctor', async (req, res) => {
@@ -261,7 +268,6 @@ async function run() {
             res.send(result)
         })
 
-
         //get todays doctor  appointments
         app.get('/todaysAppointment/:days/:docId', async (req, res) => {
             const docId = req?.params?.docId
@@ -277,8 +283,6 @@ async function run() {
 
         })
 
-
-
         //get my appointments by email 
         app.get('/myappointments/:email', async (req, res) => {
 
@@ -287,12 +291,17 @@ async function run() {
                 email
             }
             const result = await appointMentCollactions.find(query).toArray()
+            const statuses = ['pending', 'Confirmed', 'Ongoing', 'Completed', 'Cancelled'];
+            const counts = [];
 
-            const pending = await (await appointMentCollactions.find({ email, status: 'pending' }).toArray()).length
-            const ongoing = await (await appointMentCollactions.find({ email, status: 'Ongoing' }).toArray()).length
-            
-            console.log("pending", pending, "ongoing", ongoing)
-            res.send(result)
+            for (const status of statuses) {
+                const res = (await appointMentCollactions.find({ email, status }).toArray()).length
+                counts.push({status : status , count :res})
+           
+            }
+        
+
+            res.send({result,counts})
         })
 
         await client.db("admin").command({ ping: 1 });
