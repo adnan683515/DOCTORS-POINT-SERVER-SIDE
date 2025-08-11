@@ -212,7 +212,7 @@ async function run() {
         })
 
         //some doctors for admin deashboar showing 
-        app.get('/adminForDoctorRecent',async (req,res)=>{
+        app.get('/adminForDoctorRecent', async (req, res) => {
 
             const result = await doctorCollections.find().limit(6).toArray()
             res.send(result)
@@ -296,13 +296,66 @@ async function run() {
 
             for (const status of statuses) {
                 const res = (await appointMentCollactions.find({ email, status }).toArray()).length
-                counts.push({status : status , count :res})
-           
+                counts.push({ status: status, count: res })
+
             }
+
+
+            res.send({ result, counts })
+        })
+
+        //all length of collections For Admin DeashBoard
+        app.get('/allValuesCollectionsDeshboard', async (req, res) => {
+            try {
+                const doctorCount = (await doctorCollections.find().toArray()).length;
+                const patientCount = (await userCollections.find({ status: 'patient' }).toArray()).length;
+                const appointmentCount = (await appointMentCollactions.find().toArray()).length;
+
+
+
+                res.json({
+                    doctor: doctorCount,
+                    patient: patientCount,
+                    appointment: appointmentCount
+                });
+            } catch (error) {
+                console.error(error);
+                res.status(500).json({ message: 'Server Error' });
+            }
+        });
+
+        //all appointment doctor wise 
+        app.get('/appointments-by-department', async (req, res) => {
+            try {
         
 
-            res.send({result,counts})
-        })
+                const data = await appointMentCollactions.aggregate([
+                    {
+                        $group: {
+                            _id: "$dept", // appointment collection e department field dhore group korbe
+                            appointments: { $sum: 1 } // count kore total number of appointments //mane appoinemnts name akta key hobe and sum ar maddome 1 1 kore count hobe
+                        }
+                    },
+                    {
+                        $project: { //project manse user kon format a dekhbe
+                            _id: 0, //id 0 mane amra ai _id field ta dekte chacci na
+                            department: "$_id",  // _id name jeta ase oita Rename hoyw jabe
+                            appointments: 1   // 1 mane aita user dekbe
+                        }
+                    }
+                ]).toArray();
+
+       
+
+                res.json(data);
+
+            } catch (error) {
+                console.error(error);
+                res.status(500).json({ message: 'Server Error' });
+            }
+        });
+
+
 
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
