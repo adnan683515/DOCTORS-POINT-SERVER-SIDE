@@ -327,7 +327,6 @@ async function run() {
         //all appointment doctor wise 
         app.get('/appointments-by-department', async (req, res) => {
             try {
-        
 
                 const data = await appointMentCollactions.aggregate([
                     {
@@ -345,7 +344,6 @@ async function run() {
                     }
                 ]).toArray();
 
-       
 
                 res.json(data);
 
@@ -354,6 +352,13 @@ async function run() {
                 res.status(500).json({ message: 'Server Error' });
             }
         });
+
+        //get 5 appoinments for deshbaord admin 
+        app.get('/someAppointments', async (req,res)=>{
+
+            const result = await appointMentCollactions.find().limit(3).toArray()
+            res.send(result)
+        })
 
 
 
